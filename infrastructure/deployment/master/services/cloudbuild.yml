@@ -1,0 +1,52 @@
+steps:
+    # remove features supplied by DOCKER_BUILDKIT=1, since we don't have that in Cloud Build
+    - name: bash
+      args:
+        - sed
+        - -i
+        - '/mount=/d'
+        - infrastructure/docker/services/Dockerfile
+    # pull-rebuild-push $_SERVICE image
+    - name: gcr.io/cloud-builders/docker
+      entrypoint: bash
+      args:
+        - -c
+        - |
+            docker pull us-central1-docker.pkg.dev/mentha-354517/cloud-run/$_SERVICE:latest || exit 0
+    - name: gcr.io/cloud-builders/docker
+      args:
+        - build
+        - -t
+        - us-central1-docker.pkg.dev/mentha-354517/cloud-run/$_SERVICE:latest
+        - -f
+        - infrastructure/docker/services/Dockerfile
+        - --build-arg
+        - SERVICE=$_SERVICE
+        - --cache-from
+        - us-central1-docker.pkg.dev/mentha-354517/cloud-run/$_SERVICE:latest
+        - .
+    - name: gcr.io/cloud-builders/docker
+      args:
+        - push
+        - us-central1-docker.pkg.dev/mentha-354517/cloud-run/$_SERVICE:latest
+    # re-deploy cloud run service
+    - name: gcr.io/cloud-builders/gcloud
+      args:
+        - run
+        - deploy
+        - $_SERVICE
+        - --image
+        - us-central1-docker.pkg.dev/mentha-354517/cloud-run/$_SERVICE:latest
+        - --region
+        - us-central1
+        - --platform
+        - managed
+        - --memory
+        - 512Mi
+        - --cpu
+        - '2'
+        - --service-account
+        - cloud-run@mentha-354517.iam.gserviceaccount.com
+timeout: 1200s
+options:
+    logging: CLOUD_LOGGING_ONLY
