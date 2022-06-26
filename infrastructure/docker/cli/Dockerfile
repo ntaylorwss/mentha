@@ -113,3 +113,7 @@ COPY --chown=mentha:mentha \
 # insert stubs
 COPY --chown=mentha:mentha \
     .stubs /home/mentha/repo/.stubs
+
+# insert pyproject.toml
+COPY --chown=mentha:mentha \
+    pyproject.toml /home/mentha/repo/pyproject.toml

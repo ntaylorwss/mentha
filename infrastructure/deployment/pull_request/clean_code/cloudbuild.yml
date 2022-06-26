@@ -1,0 +1,64 @@
+steps:
+    # remove features supplied by DOCKER_BUILDKIT=1, since we don't have that in Cloud Build
+    - name: bash
+      id: BuildKit
+      args:
+        - sed
+        - -i
+        - '/mount=/d'
+        - infrastructure/docker/cli/Dockerfile
+    # pull-build-push the cli clean-code image
+    - name: gcr.io/cloud-builders/docker
+      id: Pull
+      entrypoint: bash
+      args:
+        - -c
+        - docker pull us-central1-docker.pkg.dev/mentha-354517/root/cli:clean-code || exit 0
+    - name: gcr.io/cloud-builders/docker
+      id: Build
+      args:
+        - build
+        - -t
+        - us-central1-docker.pkg.dev/mentha-354517/root/cli:clean-code
+        - -f
+        - infrastructure/docker/cli/Dockerfile
+        - --cache-from
+        - us-central1-docker.pkg.dev/mentha-354517/root/cli:clean-code
+        - .
+    - name: gcr.io/cloud-builders/docker
+      id: Push
+      args:
+        - push
+        - us-central1-docker.pkg.dev/mentha-354517/root/cli:clean-code
+    # checks
+    - name: gcr.io/cloud-builders/docker
+      id: Formatting Check
+      args:
+        - run
+        - us-central1-docker.pkg.dev/mentha-354517/root/cli:clean-code
+        - black
+        - --check
+        - .
+    - name: gcr.io/cloud-builders/docker
+      id: Linting Check
+      args:
+        - run
+        - us-central1-docker.pkg.dev/mentha-354517/root/cli:clean-code
+        - pflake8
+    - name: gcr.io/cloud-builders/docker
+      id: Import Sorting Check
+      args:
+        - run
+        - us-central1-docker.pkg.dev/mentha-354517/root/cli:clean-code
+        - isort
+        - --check
+        - .
+    - name: gcr.io/cloud-builders/docker
+      id: Typing Check
+      args:
+        - run
+        - us-central1-docker.pkg.dev/mentha-354517/root/cli:clean-code
+        - pyright
+timeout: 600s
+options:
+    logging: CLOUD_LOGGING_ONLY

@@ -13,6 +13,7 @@ unused-arguments-ignore-variadic-names = true
 ban-relative-imports = true
 
 [tool.isort]
+py_version=310
 skip_glob = [ ".miniconda*", ".stubs*", "psml/build*",]
 profile = "black"
 line_length = 100
