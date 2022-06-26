@@ -1,0 +1,7 @@
+typer<1
+PyYAML>=5,<6
+tabulate<1
+click-spinner<1
+black>=22,<23
+isort>=5,<6
+pydantic>=1,<2

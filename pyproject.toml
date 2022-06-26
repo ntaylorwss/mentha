@@ -1,0 +1,26 @@
+[tool.black]
+line-length = 100
+extend_exclude = ".stubs"
+
+[tool.flake8]
+exclude = [ "__init__.py", "__init__.pyi", "jupyter_lab_config.py", ".miniconda", ".stubs", "cli/build",]
+max-line-length = 100
+ignore = [ "E203", "W503", "E402", "F631",]
+per_file_ignores = [ "*.pyi:E704,E302,E305",]
+unused-arguments-ignore-abstract-functions = true
+unused-arguments-ignore-stub-functions = true
+unused-arguments-ignore-variadic-names = true
+ban-relative-imports = true
+
+[tool.isort]
+skip_glob = [ ".miniconda*", ".stubs*", "psml/build*",]
+profile = "black"
+line_length = 100
+known_first_party = [ "paystone", "experiments", "psml", "infrastructure", "tests", "link_prediction", "slackbot",]
+
+[tool.pyright]
+exclude = [ ".miniconda", "psml/build", "infrastructure/docker/notebooks/jupyter_lab_config.py",]
+pythonVersion = "3.10"
+stubPath = "./.stubs"
+reportMissingModuleSource = false
+reportPrivateImportUsage = false

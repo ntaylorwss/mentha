@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+set -e
+
+# pre-requisites:
+# - installed docker
+# - installed direnv
+
+while getopts "gvpjh" opt; do
+    case "$opt" in
+        v)
+            VENV=1
+            ;;
+        g)
+            GCLOUD_CREDS=1
+            ;;
+        p)
+            PRE_COMMIT=1
+            ;;
+        h)
+            GIT_HOOKS=1
+            ;;
+        ?)
+            exit
+    esac
+done
+
+if [ $# -eq 0 ]
+then
+    echo 'No flags provided. Set flags to run various steps of initialization. The steps are:'
+    echo '    -v: Create a virtual environment and install all Python dependencies, including NJML.'
+    echo '    -g: Login to GCloud and create a Docker volume of your user credentials.'
+    echo '    -p: Install pre-commit hooks.'
+    echo '    -h: Install Git post-merge hook to keep the CLI updated.'
+    echo 'To run all steps, execute `./.init -gvjph`.'
+    echo 'If you have not yet run -v, you cannot run -g.'
+    exit 0
+fi
+
+touch .init_in_progress
+
+if [ "$VENV" = "1" ]
+then
+    echo '(Re)creating virtual environment...'
+    rm -rf .miniconda
+
+    curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-py37_4.10.3-Linux-x86_64.sh
+
+    chmod +x miniconda.sh
+    ./miniconda.sh -b -p $PWD/.miniconda
+    .miniconda/bin/conda create -y --name mentha python=3.10
+    direnv allow
+    rm miniconda.sh
+    echo 'Virtual environment created!'
+fi
+
+if [ "$GCLOUD_CREDS" = "1" ]
+then
+    echo 'Building GCloud SDK Docker image...'
+    [ "$(docker images | grep datascience--gcloud | wc -l)" = "1" ] && \
+        docker rmi gcr.io/mentha-354517/root/gcloud:latest
+    docker volume rm -f my-gcloud-credentials mentha_gcloud-ssh
+
+    docker-compose build --build-arg DOCKER_GROUP_ID=`getent group docker | cut -d: -f3` gcloud
+
+    echo 'GCloud Docker image built!'
+
+    echo 'Logging into GCloud...'
+    docker volume create my-gcloud-credentials
+    docker-compose run --rm -u root gcloud \
+        bash -c 'chown -R 1000:1000 /home/mentha/.config/gcloud /home/mentha/.ssh'
+    docker-compose run --rm gcloud gcloud auth application-default login --project=nicejob-production
+    docker-compose run --rm gcloud gcloud auth login --project=nicejob-production
+    echo 'GCloud login completed!'
+
+    echo 'Extracting application default credentials to host...'
+    docker create -v my-gcloud-credentials:/data --name credentials-helper busybox
+    docker cp \
+        credentials-helper:/data/application_default_credentials.json \
+        .application_default_credentials.json
+    docker rm credentials-helper
+    docker rmi busybox
+    echo 'Credentials extracted!'
+
+    echo 'Generating an SSH key...'
+    docker-compose run --rm gcloud \
+        bash -c "yes | ssh-keygen -q -t rsa -b 4096 -f /home/paystone/.ssh/google_compute_engine -N ''"
+    docker-compose run --rm gcloud \
+        gcloud compute os-login ssh-keys add \
+        --key-file=/home/paystone/.ssh/google_compute_engine.pub --project=nicejob-production
+    echo 'GCloud setup complete!'
+fi
+
+if [ "$PRE_COMMIT" = "1" ]
+then
+    echo 'Installing pre-commit hooks...'
+    rm -f .git/hooks/pre-commit .git/hooks/pre-push
+    pre-commit install -t pre-commit -t pre-push --install-hooks --overwrite
+    echo 'Pre-commit hooks installed!'
+fi
+
+if [ "$GIT_HOOKS" = "1" ]
+then
+    echo 'Installing post-merge hook...'
+    rm -f .git/hooks/post-merge
+    echo 'pip install -e ./njml[dev] 2>&1 > /dev/null && echo NJML updated' > .git/hooks/post-merge && chmod +x .git/hooks/post-merge
+    echo 'Git hooks installed!'
+fi
+
+if [ -z $VENV ]
+then
+    rm -f .init_in_progress
+fi

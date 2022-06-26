@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo Launching $SERVICE service...
+if [ "$LOCAL" = "1" ]
+then
+    uvicorn \
+        --reload \
+        --reload-dir=/home/seluser/repo/services/$1 \
+        --reload-dir=/home/seluser/repo/mentha \
+        --host 0.0.0.0 \
+        --port 8080 \
+        --log-level=info \
+        $1.app:app
+else
+    gunicorn \
+        -b 0.0.0.0:8080 \
+        -c /home/seluser/gunicorn_conf.py \
+        $1.app:app
+fi

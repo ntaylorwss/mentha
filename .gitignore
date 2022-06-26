@@ -1,0 +1,10 @@
+**/.ipynb_checkpoints
+**/__pycache__
+**egg-info
+*.pyc
+data
+**.ipynb
+/notebooks
+/.miniconda
+.application_default_credentials.json
+/cli/build

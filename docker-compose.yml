@@ -1,0 +1,61 @@
+services:
+    notebooks:
+        environment:
+            - LOCAL=1
+            - GOOGLE_CLOUD_PROJECT=mentha-354517
+        build:
+            context: .
+            dockerfile: infrastructure/docker/notebooks/Dockerfile
+        volumes:
+            - ./mentha:/home/seluser/repo/mentha
+            - ./services:/home/seluser/repo/services
+            - ./notebooks:/home/seluser/work/personal
+            - gcloud-credentials:/home/mentha/.config/gcloud
+        ports:
+            - "8888:8888"
+        image: us-central1-docker.pkg.dev/mentha-354517/root/notebooks:latest
+    cli:
+        environment:
+            - LOCAL=1
+            - GOOGLE_CLOUD_PROJECT=mentha-354517
+        build:
+            context: .
+            dockerfile: infrastructure/docker/cli/Dockerfile
+        volumes:
+            - ./cli:/home/seluser/repo/cli
+            - ./mentha:/home/seluser/repo/mentha
+            - ./services:/home/seluser/repo/services
+            - ./notebooks:/home/seluser/work/personal
+            - gcloud-credentials:/home/seluser/.config/gcloud
+        image: us-central1-docker.pkg.dev/mentha-354517/root/cli:latest
+    scraper:
+        environment:
+            - LOCAL=1
+            - GOOGLE_CLOUD_PROJECT=mentha-354517
+        build:
+            context: .
+            dockerfile: infrastructure/docker/services/Dockerfile
+            args:
+                SERVICE: scraper
+        volumes:
+            - ./mentha:/home/seluser/repo/mentha
+            - ./services:/home/seluser/repo/services
+            - gcloud-credentials:/home/seluser/.config/gcloud
+        ports:
+            - "8080:8080"
+        image: us-central1-docker.pkg.dev/mentha-354517/root/scraper:latest
+    gcloud:
+        volumes:
+            - .:/home/seluser/mnt/repo
+            - /var/run/docker.sock:/var/run/docker.sock
+            - gcloud-credentials:/home/mentha/.config/gcloud
+            - gcloud-ssh:/home/seluser/.ssh
+        build:
+            context: .
+            dockerfile: infrastructure/docker/gcloud/Dockerfile
+        image: us-central1-docker.pkg.dev/mentha-354517/root/gcloud:latest
+volumes:
+    gcloud-credentials:
+        external: true
+        name: my-gcloud-credentials
+    gcloud-ssh: null
