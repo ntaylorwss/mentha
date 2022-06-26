@@ -13,7 +13,7 @@ services:
             - gcloud-credentials:/home/mentha/.config/gcloud
         ports:
             - "8888:8888"
-        image: us-central1-docker.pkg.dev/mentha-354517/root/notebooks:latest
+        image: us-central1-docker.pkg.dev/mentha-354517/local/notebooks:latest
     cli:
         environment:
             - LOCAL=1
@@ -27,7 +27,7 @@ services:
             - ./services:/home/seluser/repo/services
             - ./notebooks:/home/seluser/work/personal
             - gcloud-credentials:/home/seluser/.config/gcloud
-        image: us-central1-docker.pkg.dev/mentha-354517/root/cli:latest
+        image: us-central1-docker.pkg.dev/mentha-354517/ci/cli:latest
     scraper:
         environment:
             - LOCAL=1
@@ -43,7 +43,7 @@ services:
             - gcloud-credentials:/home/seluser/.config/gcloud
         ports:
             - "8080:8080"
-        image: us-central1-docker.pkg.dev/mentha-354517/root/scraper:latest
+        image: us-central1-docker.pkg.dev/mentha-354517/cloud-run/scraper:latest
     gcloud:
         volumes:
             - .:/home/seluser/mnt/repo
@@ -53,7 +53,7 @@ services:
         build:
             context: .
             dockerfile: infrastructure/docker/gcloud/Dockerfile
-        image: us-central1-docker.pkg.dev/mentha-354517/root/gcloud:latest
+        image: us-central1-docker.pkg.dev/mentha-354517/local/gcloud:latest
 volumes:
     gcloud-credentials:
         external: true
