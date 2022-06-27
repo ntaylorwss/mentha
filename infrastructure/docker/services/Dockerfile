@@ -26,9 +26,9 @@ COPY --from=python@sha256:678346507112562ab8bbbfeb153535fade07f7e01281e3490a8a71
 RUN echo /usr/local/lib > /etc/ld.so.conf.d/python310.conf && ldconfig
 
 # install gunicorn conf and start script
-COPY --chown=paystone:paystone \
+COPY --chown=seluser:seluser \
     infrastructure/docker/services/gunicorn_conf.py /home/seluser/gunicorn_conf.py
-COPY --chown=paystone:paystone \
+COPY --chown=seluser:seluser \
     infrastructure/docker/services/start /home/seluser/start
 
 # base linux packages
