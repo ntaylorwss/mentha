@@ -49,7 +49,6 @@ services:
             - .:/home/seluser/mnt/repo
             - /var/run/docker.sock:/var/run/docker.sock
             - gcloud-credentials:/home/mentha/.config/gcloud
-            - gcloud-ssh:/home/seluser/.ssh
         build:
             context: .
             dockerfile: infrastructure/docker/gcloud/Dockerfile
@@ -57,5 +56,4 @@ services:
 volumes:
     gcloud-credentials:
         external: true
-        name: my-gcloud-credentials
-    gcloud-ssh: null
+        name: mentha-my-gcloud-credentials
