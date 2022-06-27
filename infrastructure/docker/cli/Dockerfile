@@ -110,6 +110,6 @@ RUN \
 COPY --chown=mentha:mentha \
     infrastructure /home/mentha/repo/infrastructure
 
-# insert stubs
+# insert pyproject.toml
 COPY --chown=mentha:mentha \
-    .stubs /home/mentha/repo/.stubs
+    pyproject.toml /home/mentha/repo/pyproject.toml

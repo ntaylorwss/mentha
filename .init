@@ -57,37 +57,29 @@ if [ "$GCLOUD_CREDS" = "1" ]
 then
     echo 'Building GCloud SDK Docker image...'
     [ "$(docker images | grep datascience--gcloud | wc -l)" = "1" ] && \
-        docker rmi gcr.io/mentha-354517/root/gcloud:latest
-    docker volume rm -f my-gcloud-credentials mentha_gcloud-ssh
+        docker rmi gcr.io/mentha-354517/local/gcloud:latest
+    docker volume rm -f mentha-my-gcloud-credentials
 
     docker-compose build --build-arg DOCKER_GROUP_ID=`getent group docker | cut -d: -f3` gcloud
 
     echo 'GCloud Docker image built!'
 
     echo 'Logging into GCloud...'
-    docker volume create my-gcloud-credentials
+    docker volume create mentha-my-gcloud-credentials
     docker-compose run --rm -u root gcloud \
-        bash -c 'chown -R 1000:1000 /home/mentha/.config/gcloud /home/mentha/.ssh'
+        bash -c 'chown -R 1000:1000 /home/mentha/.config/gcloud'
     docker-compose run --rm gcloud gcloud auth application-default login --project=nicejob-production
     docker-compose run --rm gcloud gcloud auth login --project=nicejob-production
     echo 'GCloud login completed!'
 
     echo 'Extracting application default credentials to host...'
-    docker create -v my-gcloud-credentials:/data --name credentials-helper busybox
+    docker create -v mentha-my-gcloud-credentials:/data --name credentials-helper busybox
     docker cp \
         credentials-helper:/data/application_default_credentials.json \
         .application_default_credentials.json
     docker rm credentials-helper
     docker rmi busybox
     echo 'Credentials extracted!'
-
-    echo 'Generating an SSH key...'
-    docker-compose run --rm gcloud \
-        bash -c "yes | ssh-keygen -q -t rsa -b 4096 -f /home/paystone/.ssh/google_compute_engine -N ''"
-    docker-compose run --rm gcloud \
-        gcloud compute os-login ssh-keys add \
-        --key-file=/home/paystone/.ssh/google_compute_engine.pub --project=nicejob-production
-    echo 'GCloud setup complete!'
 fi
 
 if [ "$PRE_COMMIT" = "1" ]
